@@ -1,0 +1,71 @@
+mindwell/
+├── backend/
+│   ├── config/
+│   │   └── db.js                  # MongoDB connection
+│   ├── models/
+│   │   ├── User.js                # email, hashed password, isPremium flag
+│   │   └── JournalEntry.js        # encrypted content, mood, energy, date
+│   ├── middleware/
+│   │   ├── auth.js                # JWT verification
+│   │   └── premium.js             # gate premium-only routes
+│   ├── utils/
+│   │   ├── encryption.js          # AES-256 encrypt/decrypt helpers
+│   │   └── exportData.js          # JSON/PDF export logic
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── journalController.js
+│   │   ├── moodController.js
+│   │   └── exportController.js
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── journalRoutes.js
+│   │   ├── moodRoutes.js
+│   │   └── exportRoutes.js
+│   ├── .env                       # JWT_SECRET, ENCRYPTION_KEY, MONGO_URI
+│   ├── server.js
+│   └── package.json
+│
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   │   ├── JournalEntry/      # entry card, editor, prompt display
+    │   │   ├── MoodTracker/       # slider/smiley logger
+    │   │   ├── Charts/            # line graph, pie chart
+    │   │   ├── BreathingTool/     # animated circle (Framer Motion)
+    │   │   └── shared/            # Navbar, DarkModeToggle, Button, etc.
+    │   ├── pages/
+    │   │   ├── Login.jsx
+    │   │   ├── Register.jsx
+    │   │   ├── Dashboard.jsx
+    │   │   ├── JournalPage.jsx
+    │   │   ├── AnalyticsPage.jsx  # premium-gated
+    │   │   └── BreathingPage.jsx
+    │   ├── context/
+    │   │   └── AuthContext.jsx
+    │   ├── services/
+    │   │   └── api.js             # axios instance + calls to backend
+    │   ├── styles/
+    │   │   └── theme.js           # dark/light mode variables
+    │   ├── App.jsx
+    │   └── main.jsx
+    └── package.json
+
+
+
+    node_modules/
+frontend/node_modules/
+backend/node_modules/
+.env
+backend/.env
+frontend/.env
+frontend/dist/
+backend/dist/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+frontend/.vite/
+
+Copy-Item -Path "$env:USERPROFILE\Downloads\mindwell_new\mindwell\*" -Destination . -Recurse -Force

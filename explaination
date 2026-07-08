@@ -1,0 +1,45 @@
+POSTMAN (OR THUNDER CLIENT)
+1. For testing your backend API routes independently before connecting the frontend
+2. Download: https://www.postman.com/downloads
+3. (Alternative: Thunder Client is a VS Code extension — lighter weight, no separate app)
+
+#These get installed inside the project folders with npm install, not system-wide:
+1. Express, Mongoose, bcrypt, crypto-js, jsonwebtoken (backend)
+2. React, Framer Motion, Chart.js, Axios (frontend)
+
+  <<<---------INSTALLATION---------->>>
+
+npm install express mongoose dotenv cors bcryptjs jsonwebtoken crypto-js
+npm install -D nodemon
+what it does -
+1. express — server framework
+2. mongoose — MongoDB connection/models
+3. dotenv — load secrets from .env file
+4. cors — allow frontend to talk to backend
+5. bcryptjs — hash passwords (pure JS, no build tools needed — easier than bcrypt)
+6. jsonwebtoken — login sessions (JWT)
+7. crypto-js — AES-256 encryption for journal entries
+8. nodemon (dev only) — auto-restarts server when you save files
+
+npm create vite@latest frontend
+what it does -
+1. vite@latest — it download react vite project and latest one 
+2. frontend — it will also create a new folder named as frontend due to (create in the starting in the statement)
+
+npm install axios react-router-dom framer-motion chart.js react-chartjs-2
+what it does -
+1. axios — call your backend API
+2. react-router-dom — page navigation (login, dashboard, journal, etc.)
+3. framer-motion — the breathing animation
+4. chart.js + react-chartjs-2 — mood graphs
+
+AFTER DOWNLOADING THE ALL PACKAGES WE HAVE TO RUN BOTH (IN SEPERATE TERMINAL) :
+# Terminal 1 - backend
+cd backend
+npx nodemon server.js
+
+# Terminal 2 - frontend
+cd frontend
+npm run dev
+
+
