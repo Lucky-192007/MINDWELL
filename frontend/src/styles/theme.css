@@ -1,0 +1,70 @@
+/* MindWell design tokens - purple/indigo calming dashboard aesthetic */
+
+:root {
+  --bg: #F5F4FB;
+  --bg-elevated: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --text-primary: #1E1B33;
+  --text-secondary: #8B889C;
+
+  --accent: #6C5CE7;
+  --accent-soft: #EFECFF;
+  --accent-lavender: #A9A1E0;
+  --danger: #EE5D5D;
+
+  --mood-great: #6C5CE7;
+  --mood-good: #4CAF7D;
+  --mood-okay: #F0B94C;
+  --mood-low: #F0894C;
+  --mood-bad: #EE5D5D;
+
+  --border: #ECEAF3;
+  --shadow: rgba(108, 92, 231, 0.08);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Work Sans', -apple-system, sans-serif;
+}
+
+[data-theme='dark'] {
+  --bg: #14121F;
+  --bg-elevated: #1E1B2E;
+  --bg-sidebar: #1A1828;
+  --text-primary: #F1EFFA;
+  --text-secondary: #9490AC;
+
+  --accent: #8B7FF2;
+  --accent-soft: #2B2650;
+  --accent-lavender: #B8AEDD;
+  --danger: #F0837E;
+
+  --border: #2A2740;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; }
+
+button { font-family: var(--font-body); cursor: pointer; }
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
