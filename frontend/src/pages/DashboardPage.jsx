@@ -40,9 +40,21 @@ const DashboardPage = () => {
 
   return (
     <AppLayout title={`Good morning, ${user?.name?.split(' ')[0] || 'there'}! ☀️`} subtitle="How are you feeling today?">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+      <div
+        className="card"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '18px 24px',
+          marginBottom: 20,
+          flexWrap: 'wrap',
+          gap: 16,
+          background: 'linear-gradient(135deg, var(--accent-soft), var(--bg-elevated))',
+        }}
+      >
         <MoodQuickSelect value={mood} onChange={setMood} />
-        <button onClick={() => navigate('/journal')} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 20, padding: '11px 24px', fontSize: 14.5 }}>
+        <button onClick={() => navigate('/journal')} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 20, padding: '11px 24px', fontSize: 14.5, whiteSpace: 'nowrap' }}>
           Write Journal
         </button>
       </div>

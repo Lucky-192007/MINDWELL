@@ -1,7 +1,8 @@
-/* MindWell design tokens - purple/indigo calming dashboard aesthetic */
+/* MindWell design tokens - calming gradient dashboard aesthetic */
 
 :root {
-  --bg: #F5F4FB;
+  --bg: #F3F1FB;
+  --bg-gradient: radial-gradient(circle at 15% 0%, #EFEBFF 0%, #F6F4FC 45%, #EFF7F4 100%);
   --bg-elevated: #FFFFFF;
   --bg-sidebar: #FFFFFF;
   --text-primary: #1E1B33;
@@ -31,6 +32,7 @@
 
 [data-theme='dark'] {
   --bg: #14121F;
+  --bg-gradient: radial-gradient(circle at 15% 0%, #241F3D 0%, #17152A 45%, #10161F 100%);
   --bg-elevated: #1E1B2E;
   --bg-sidebar: #1A1828;
   --text-primary: #F1EFFA;
@@ -47,12 +49,14 @@
 
 * { box-sizing: border-box; }
 
-body {
+html, body {
   margin: 0;
-  background: var(--bg);
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.4s ease, color 0.3s ease;
 }
 
 h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; }
