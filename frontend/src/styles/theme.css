@@ -1,11 +1,11 @@
 /* MindWell design tokens - calming gradient dashboard aesthetic */
 
 :root {
-  --bg: #F3F1FB;
-  --bg-gradient: radial-gradient(circle at 15% 0%, #EFEBFF 0%, #F6F4FC 45%, #EFF7F4 100%);
+  --bg: #FAF6F2;
+  --bg-gradient: linear-gradient(160deg, #FDF2E9 0%, #F6EEFB 45%, #EAF6F1 100%);
   --bg-elevated: #FFFFFF;
   --bg-sidebar: #FFFFFF;
-  --text-primary: #1E1B33;
+  --text-primary: #211D2E;
   --text-secondary: #8B889C;
 
   --accent: #6C5CE7;
@@ -31,10 +31,10 @@
 }
 
 [data-theme='dark'] {
-  --bg: #14121F;
-  --bg-gradient: radial-gradient(circle at 15% 0%, #241F3D 0%, #17152A 45%, #10161F 100%);
-  --bg-elevated: #1E1B2E;
-  --bg-sidebar: #1A1828;
+  --bg: #10151A;
+  --bg-gradient: linear-gradient(160deg, #131B29 0%, #171526 50%, #101915 100%);
+  --bg-elevated: #1B2027;
+  --bg-sidebar: #161B21;
   --text-primary: #F1EFFA;
   --text-secondary: #9490AC;
 
@@ -43,7 +43,7 @@
   --accent-lavender: #B8AEDD;
   --danger: #F0837E;
 
-  --border: #2A2740;
+  --border: #262C35;
   --shadow: rgba(0, 0, 0, 0.4);
 }
 
