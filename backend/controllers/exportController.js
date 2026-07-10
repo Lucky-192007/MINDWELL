@@ -21,7 +21,7 @@ const exportJson = async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="mindwell-journal-export.json"');
     res.json(data);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -31,7 +31,7 @@ const exportPdf = async (req, res) => {
     const entries = await getDecryptedEntries(req.user._id);
     streamPdfExport(res, req.user, entries);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 

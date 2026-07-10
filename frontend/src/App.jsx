@@ -4,6 +4,7 @@ import ProtectedRoute from './components/shared/ProtectedRoute';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyOtpPage from './pages/VerifyOtpPage';
 import DashboardPage from './pages/DashboardPage';
 import WriteJournalPage from './pages/WriteJournalPage';
 import JournalsPage from './pages/JournalsPage';
@@ -20,6 +21,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
           <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/journal" element={<ProtectedRoute><WriteJournalPage /></ProtectedRoute>} />

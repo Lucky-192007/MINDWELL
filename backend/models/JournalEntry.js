@@ -7,6 +7,7 @@ const journalEntrySchema = new mongoose.Schema(
     content: { type: String, required: true }, // ENCRYPTED text (never plaintext) - "iv:ciphertext"
     mood: { type: Number, min: 1, max: 10, required: true },
     energy: { type: Number, min: 1, max: 10, required: true },
+    starred: { type: Boolean, default: false },
     date: { type: Date, default: Date.now },
   },
   { timestamps: true }

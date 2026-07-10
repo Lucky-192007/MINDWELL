@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, getMe } from '../services/api';
+import { loginUser, registerUser, verifyOtp as verifyOtpApi, resendOtp as resendOtpApi, getMe } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -8,6 +8,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pendingOtpEmail, setPendingOtpEmail] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('mindwell_token');
@@ -21,17 +22,37 @@ export const AuthProvider = ({ children }) => {
       .finally(() => setLoading(false));
   }, []);
 
+  // Login may succeed immediately, or come back requiring OTP verification
+  // (e.g. account created but never verified).
   const login = async (email, password) => {
-    const res = await loginUser({ email, password });
-    localStorage.setItem('mindwell_token', res.data.token);
-    setUser(res.data);
+    try {
+      const res = await loginUser({ email, password });
+      localStorage.setItem('mindwell_token', res.data.token);
+      setUser(res.data);
+    } catch (err) {
+      if (err.response?.data?.requiresOtp) {
+        setPendingOtpEmail(err.response.data.email);
+      }
+      throw err;
+    }
   };
 
+  // Registration never logs the user in directly - it sends an OTP and
+  // the caller should route to the verification screen.
   const register = async (name, email, password) => {
     const res = await registerUser({ name, email, password });
+    setPendingOtpEmail(res.data.email);
+    return res.data;
+  };
+
+  const verifyOtp = async (email, otp) => {
+    const res = await verifyOtpApi({ email, otp });
     localStorage.setItem('mindwell_token', res.data.token);
     setUser(res.data);
+    setPendingOtpEmail(null);
   };
+
+  const resendOtp = async (email) => resendOtpApi({ email });
 
   const logout = () => {
     localStorage.removeItem('mindwell_token');
@@ -39,7 +60,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, register, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, setUser, login, register, verifyOtp, resendOtp, logout, loading, pendingOtpEmail, setPendingOtpEmail }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -7,6 +7,7 @@ const JournalsPage = () => {
   const [entries, setEntries] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [filter, setFilter] = useState('all'); // all | starred
 
   const load = () => getEntries().then((res) => setEntries(res.data));
   useEffect(() => { load(); }, []);
@@ -22,16 +23,43 @@ const JournalsPage = () => {
     load();
   };
 
+  const toggleStar = async (entry) => {
+    await updateEntry(entry._id, { starred: !entry.starred });
+    load();
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this journal entry? This cannot be undone.')) return;
     await deleteEntry(id);
     load();
   };
 
+  const visible = filter === 'starred' ? entries.filter((e) => e.starred) : entries;
+
   return (
     <AppLayout title="Journals" subtitle="All your entries in one place.">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+        {['all', 'starred'].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 16,
+              border: 'none',
+              background: filter === f ? 'var(--accent)' : 'var(--bg-elevated)',
+              color: filter === f ? 'white' : 'var(--text-secondary)',
+              fontSize: 13.5,
+              textTransform: 'capitalize',
+            }}
+          >
+            {f === 'starred' ? '★ Favorites' : 'All entries'}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 760 }}>
-        {entries.map((entry) => {
+        {visible.map((entry) => {
           const cat = scoreToCategory(entry.mood);
           const isEditing = editingId === entry._id;
           return (
@@ -40,9 +68,18 @@ const JournalsPage = () => {
                 <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                   {new Date(entry.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
-                <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 12, background: 'var(--accent-soft)', color: cat.color }}>
-                  {cat.emoji} {cat.label}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 12, background: 'var(--accent-soft)', color: cat.color }}>
+                    {cat.emoji} {cat.label}
+                  </span>
+                  <button
+                    onClick={() => toggleStar(entry)}
+                    title={entry.starred ? 'Unstar' : 'Star this entry'}
+                    style={{ background: 'none', border: 'none', fontSize: 16, color: entry.starred ? '#F0B94C' : 'var(--text-secondary)' }}
+                  >
+                    {entry.starred ? '★' : '☆'}
+                  </button>
+                </div>
               </div>
 
               {isEditing ? (
@@ -70,7 +107,11 @@ const JournalsPage = () => {
             </div>
           );
         })}
-        {!entries.length && <p style={{ color: 'var(--text-secondary)' }}>No entries yet.</p>}
+        {!visible.length && (
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {filter === 'starred' ? 'No starred entries yet - tap the star on any entry to save it here.' : 'No entries yet.'}
+          </p>
+        )}
       </div>
     </AppLayout>
   );

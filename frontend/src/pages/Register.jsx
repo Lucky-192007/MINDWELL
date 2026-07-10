@@ -16,7 +16,7 @@ const Register = () => {
     setError('');
     try {
       await register(name, email, password);
-      navigate('/journal');
+      navigate('/verify-otp');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     }

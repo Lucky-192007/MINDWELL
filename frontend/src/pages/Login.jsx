@@ -17,6 +17,10 @@ const Login = () => {
       await login(email, password);
       navigate('/journal');
     } catch (err) {
+      if (err.response?.data?.requiresOtp) {
+        navigate('/verify-otp');
+        return;
+      }
       setError(err.response?.data?.message || 'Login failed');
     }
   };

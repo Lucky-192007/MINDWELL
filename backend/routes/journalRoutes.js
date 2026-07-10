@@ -7,12 +7,14 @@ const {
   getEntryById,
   updateEntry,
   deleteEntry,
+  importEntries,
 } = require('../controllers/journalController');
 const { protect } = require('../middleware/auth');
 
 router.use(protect); // every journal route requires login
 
 router.get('/prompt', getDailyPrompt);
+router.post('/import', importEntries);
 router.route('/').post(createEntry).get(getEntries);
 router.route('/:id').get(getEntryById).put(updateEntry).delete(deleteEntry);
 

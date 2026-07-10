@@ -16,7 +16,7 @@ const getMoodHistory = async (req, res) => {
 
     res.json(entries);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -38,7 +38,7 @@ const getWeeklyAverage = async (req, res) => {
 
     res.json(results);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -60,7 +60,7 @@ const getMonthlyAverage = async (req, res) => {
 
     res.json(results);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -75,7 +75,7 @@ const getMoodDistribution = async (req, res) => {
 
     res.json(results);
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 

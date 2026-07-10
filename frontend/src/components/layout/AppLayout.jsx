@@ -1,7 +1,16 @@
+import { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import DarkModeToggle from '../shared/DarkModeToggle';
+import { useAuth } from '../../context/AuthContext';
+import { applyThemeColor } from '../../utils/themeColors';
 
 const AppLayout = ({ children, title, subtitle }) => {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    applyThemeColor(user?.themeColor || 'purple');
+  }, [user?.themeColor]);
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
