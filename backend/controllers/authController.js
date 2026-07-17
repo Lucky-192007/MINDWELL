@@ -243,6 +243,61 @@ const deleteAccount = async (req, res) => {
   }
 };
 
+// @route POST /api/auth/forgot-password
+// Sends a reset code to the user's email (reuses the same OTP fields on the model)
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    // Always respond success even if not found, to avoid leaking which emails are registered
+    if (!user) return res.json({ message: 'If that email exists, a reset code has been sent.' });
+
+    const otp = generateOtp();
+    user.otpCode = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    await sendOtpEmail(email, user.name, otp);
+    res.json({ message: 'If that email exists, a reset code has been sent.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// @route POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, code, and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'Account not found' });
+    if (!user.otpCode || !user.otpExpires || user.otpExpires < new Date()) {
+      return res.status(400).json({ message: 'Code expired. Please request a new one.' });
+    }
+    if (user.otpCode !== otp) {
+      return res.status(400).json({ message: 'Incorrect code' });
+    }
+
+    user.password = newPassword;
+    user.otpCode = null;
+    user.otpExpires = null;
+    user.logActivity('Reset password via email code');
+    await user.save();
+
+    res.json({ message: 'Password reset successfully. You can now log in.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   registerUser,
   verifyOtp,
@@ -254,4 +309,6 @@ module.exports = {
   changePassword,
   getActivityLog,
   deleteAccount,
+  forgotPassword,
+  resetPassword,
 };
