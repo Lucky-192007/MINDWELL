@@ -19,7 +19,7 @@ const VerifyOtpPage = () => {
     setError('');
     try {
       await verifyOtp(pendingOtpEmail, otp);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed');
     }

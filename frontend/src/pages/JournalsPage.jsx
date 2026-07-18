@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
+import MoodQuickSelect from '../components/MoodTracker/MoodQuickSelect';
 import { getEntries, updateEntry, deleteEntry } from '../services/api';
 import { scoreToCategory } from '../utils/mood';
 
@@ -7,6 +8,8 @@ const JournalsPage = () => {
   const [entries, setEntries] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [editMood, setEditMood] = useState(5);
+  const [editEnergy, setEditEnergy] = useState(5);
   const [filter, setFilter] = useState('all'); // all | starred
 
   const load = () => getEntries().then((res) => setEntries(res.data));
@@ -15,10 +18,12 @@ const JournalsPage = () => {
   const startEdit = (entry) => {
     setEditingId(entry._id);
     setEditText(entry.content);
+    setEditMood(entry.mood);
+    setEditEnergy(entry.energy);
   };
 
   const saveEdit = async (id) => {
-    await updateEntry(id, { content: editText });
+    await updateEntry(id, { content: editText, mood: editMood, energy: editEnergy });
     setEditingId(null);
     load();
   };
@@ -69,9 +74,11 @@ const JournalsPage = () => {
                   {new Date(entry.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 12, background: 'var(--accent-soft)', color: cat.color }}>
-                    {cat.emoji} {cat.label}
-                  </span>
+                  {!isEditing && (
+                    <span style={{ fontSize: 12, padding: '4px 10px', borderRadius: 12, background: 'var(--accent-soft)', color: cat.color }}>
+                      {cat.emoji} {cat.label}
+                    </span>
+                  )}
                   <button
                     onClick={() => toggleStar(entry)}
                     title={entry.starred ? 'Unstar' : 'Star this entry'}
@@ -88,16 +95,29 @@ const JournalsPage = () => {
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     rows={4}
-                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }}
+                    style={{ width: '100%', padding: 10, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', marginBottom: 12 }}
                   />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: '0 0 8px' }}>Update your mood for this entry</p>
+                  <MoodQuickSelect value={editMood} onChange={setEditMood} />
+
+                  <div style={{ marginTop: 14 }}>
+                    <label style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>Energy level ({editEnergy}/10)</label>
+                    <input
+                      type="range" min="1" max="10" value={editEnergy}
+                      onChange={(e) => setEditEnergy(Number(e.target.value))}
+                      style={{ width: '100%', accentColor: 'var(--accent)' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                     <button onClick={() => saveEdit(entry._id)} style={smallBtn}>Save</button>
                     <button onClick={() => setEditingId(null)} style={{ ...smallBtn, background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>Cancel</button>
                   </div>
                 </>
               ) : (
                 <>
-                  <p style={{ margin: '0 0 10px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{entry.content}</p>
+                  <p style={{ margin: '0 0 6px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{entry.content}</p>
+                  <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--text-secondary)' }}>Energy: {entry.energy}/10</p>
                   <div style={{ display: 'flex', gap: 14 }}>
                     <button onClick={() => startEdit(entry)} style={linkBtn}>Edit</button>
                     <button onClick={() => handleDelete(entry._id)} style={{ ...linkBtn, color: 'var(--danger)' }}>Delete</button>

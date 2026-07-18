@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtpPage from './pages/VerifyOtpPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import WriteJournalPage from './pages/WriteJournalPage';
 import JournalsPage from './pages/JournalsPage';
@@ -16,24 +19,28 @@ import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-otp" element={<VerifyOtpPage />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<VerifyOtpPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/journal" element={<ProtectedRoute><WriteJournalPage /></ProtectedRoute>} />
-          <Route path="/journals" element={<ProtectedRoute><JournalsPage /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-          <Route path="/breathe" element={<ProtectedRoute><BreathingPage /></ProtectedRoute>} />
-          <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/journal" element={<ProtectedRoute><WriteJournalPage /></ProtectedRoute>} />
+            <Route path="/journals" element={<ProtectedRoute><JournalsPage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+            <Route path="/breathe" element={<ProtectedRoute><BreathingPage /></ProtectedRoute>} />
+            <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

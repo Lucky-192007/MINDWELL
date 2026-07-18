@@ -31,20 +31,20 @@
 }
 
 [data-theme='dark'] {
-  --bg: #10151A;
-  --bg-gradient: linear-gradient(160deg, #131B29 0%, #171526 50%, #101915 100%);
-  --bg-elevated: #1B2027;
-  --bg-sidebar: #161B21;
+  --bg: #000000;
+  --bg-gradient: #000000;
+  --bg-elevated: #131313;
+  --bg-sidebar: #0A0A0A;
   --text-primary: #F1EFFA;
   --text-secondary: #9490AC;
 
   --accent: #8B7FF2;
-  --accent-soft: #2B2650;
+  --accent-soft: #211F2E;
   --accent-lavender: #B8AEDD;
   --danger: #F0837E;
 
-  --border: #262C35;
-  --shadow: rgba(0, 0, 0, 0.4);
+  --border: #212121;
+  --shadow: rgba(0, 0, 0, 0.6);
 }
 
 * { box-sizing: border-box; }

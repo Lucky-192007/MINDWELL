@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './styles/theme.css';
 
-document.documentElement.setAttribute('data-theme', 'dark');
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
