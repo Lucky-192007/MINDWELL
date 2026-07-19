@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import AuthCard, { authInputStyle, authButtonStyle } from '../components/AuthCard';
 
 const VerifyOtpPage = () => {
   const { pendingOtpEmail, verifyOtp, resendOtp } = useAuth();
@@ -32,19 +32,8 @@ const VerifyOtpPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 20px' }}>
-      <motion.form
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        onSubmit={handleSubmit}
-        className="card"
-        style={{ padding: 40, width: 380, display: 'flex', flexDirection: 'column', gap: 16 }}
-      >
-        <h2 style={{ margin: 0 }}>Check your email</h2>
-        <p style={{ color: 'var(--text-secondary)', marginTop: -8, fontSize: 14 }}>
-          We sent a 6-digit code to <strong>{pendingOtpEmail}</strong>
-        </p>
-
+    <AuthCard icon="✉️" title="Check Your Email" subtitle={`We sent a 6-digit code to ${pendingOtpEmail || 'your email'}`}>
+      <form onSubmit={handleSubmit}>
         <input
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -52,37 +41,18 @@ const VerifyOtpPage = () => {
           inputMode="numeric"
           maxLength={6}
           required
-          style={{
-            padding: 14,
-            borderRadius: 10,
-            border: '1px solid var(--border)',
-            background: 'var(--bg)',
-            color: 'var(--text-primary)',
-            fontSize: 24,
-            letterSpacing: 8,
-            textAlign: 'center',
-          }}
+          style={{ ...authInputStyle, fontSize: 26, letterSpacing: 10, textAlign: 'center' }}
         />
 
-        {error && <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error}</p>}
-        {resent && <p style={{ color: 'var(--accent)', fontSize: 13 }}>✓ A new code was sent</p>}
+        {error && <p style={{ color: '#EE5D5D', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
+        {resent && <p style={{ color: '#8B7FF2', fontSize: 12.5, margin: '0 0 10px' }}>✓ A new code was sent</p>}
 
-        <button
-          type="submit"
-          style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 20, padding: '12px 0', fontSize: 15 }}
-        >
-          Verify & continue
-        </button>
-
-        <button
-          type="button"
-          onClick={handleResend}
-          style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13.5 }}
-        >
-          Didn't get it? Resend code
-        </button>
-      </motion.form>
-    </div>
+        <button type="submit" style={authButtonStyle}>Verify & Continue</button>
+      </form>
+      <button onClick={handleResend} style={{ background: 'none', border: 'none', color: '#A9A1E0', fontSize: 13, marginTop: 16 }}>
+        Didn't get it? Resend code
+      </button>
+    </AuthCard>
   );
 };
 

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import AuthShell from '../components/AuthShell';
+import AuthCard, { authInputStyle, authLabelStyle, authButtonStyle } from '../components/AuthCard';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -30,52 +29,30 @@ const Register = () => {
   };
 
   return (
-    <AuthShell toast={toast}>
-      <motion.form
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        onSubmit={handleSubmit}
-        className="card"
-        style={{ padding: 40, width: 380, maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}
-      >
-        <h2 style={{ margin: 0 }}>Create your space</h2>
-        <p style={{ color: 'var(--text-secondary)', marginTop: -8 }}>Private, encrypted, yours alone.</p>
+    <AuthCard icon="🌸" title="Create Your Space" subtitle="Private, encrypted, yours alone" toast={toast}>
+      <form onSubmit={handleSubmit}>
+        <label style={authLabelStyle}>Name</label>
+        <input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required style={authInputStyle} />
 
-        <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required style={inputStyle} />
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={inputStyle} />
+        <label style={authLabelStyle}>Email address</label>
+        <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={authInputStyle} />
 
-        {error && <p style={{ color: 'var(--danger)', fontSize: 14, margin: 0 }}>{error}</p>}
+        <label style={authLabelStyle}>Password</label>
+        <input type="password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={authInputStyle} />
 
-        <button type="submit" disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.7 : 1 }}>
-          {loading ? 'Creating account...' : 'Create account'}
+        {error && <p style={{ color: '#EE5D5D', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
+
+        <button type="submit" disabled={loading} style={{ ...authButtonStyle, opacity: loading ? 0.7 : 1 }}>
+          {loading ? 'Creating account...' : 'Create Account'}
         </button>
+      </form>
 
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', textAlign: 'center' }}>
-          Already have an account? <Link to="/login" style={{ color: 'var(--accent)' }}>Log in</Link>
-        </p>
-      </motion.form>
-    </AuthShell>
+      <hr style={{ border: 'none', borderTop: '1px solid #212121', margin: '24px 0' }} />
+      <p style={{ fontSize: 13, color: '#9490AC', margin: 0 }}>
+        Already have an account? <Link to="/login" style={{ color: '#A9A1E0' }}>Log in</Link>
+      </p>
+    </AuthCard>
   );
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: 12,
-  borderRadius: 10,
-  border: '1px solid var(--border)',
-  background: 'var(--bg)',
-  color: 'var(--text-primary)',
-  fontSize: 15,
-};
-
-const buttonStyle = {
-  background: 'var(--accent)',
-  color: 'white',
-  border: 'none',
-  borderRadius: 20,
-  padding: '12px 0',
-  fontSize: 15,
 };
 
 export default Register;

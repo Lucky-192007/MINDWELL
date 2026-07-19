@@ -15,7 +15,13 @@ import {
   deleteAccount,
   getActivityLog,
   importEntries,
+  sendDigestNow,
+  getVapidPublicKey,
+  savePushSubscription,
+  removePushSubscription,
+  sendTestPush,
 } from '../services/api';
+import { isPushSupported, subscribeToPush, unsubscribeFromPush } from '../utils/push';
 
 const PROMPT_CATEGORY_OPTIONS = [
   { key: 'gratitude', label: 'Gratitude' },
@@ -46,6 +52,14 @@ const ProfilePage = () => {
   const [prefsSaved, setPrefsSaved] = useState(false);
 
   const [promptCategories, setPromptCategories] = useState(user?.promptCategories || ['gratitude', 'reflection', 'goals']);
+
+  const [weeklyDigest, setWeeklyDigest] = useState(user?.notificationPrefs?.weeklyDigest || false);
+  const [monthlyDigest, setMonthlyDigest] = useState(user?.notificationPrefs?.monthlyDigest || false);
+  const [aiReflectionEnabled, setAiReflectionEnabled] = useState(user?.aiReflectionEnabled || false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushSupported] = useState(isPushSupported());
+  const [digestSending, setDigestSending] = useState(false);
+  const [pushTestSending, setPushTestSending] = useState(false);
 
   const [activity, setActivity] = useState([]);
   const [importMsg, setImportMsg] = useState('');
@@ -119,12 +133,71 @@ const ProfilePage = () => {
     }
   };
 
-  // --- Preferences ---
+  // --- Preferences (including digest + AI) ---
   const savePreferences = async () => {
-    const res = await updatePreferences({ dailyReminder, reminderTime, promptCategories });
+    const res = await updatePreferences({ 
+      dailyReminder, 
+      reminderTime, 
+      promptCategories,
+      weeklyDigest,
+      monthlyDigest,
+      aiReflectionEnabled,
+    });
     setUser(res.data);
     setPrefsSaved(true);
     setTimeout(() => setPrefsSaved(false), 2000);
+  };
+
+  const handleDigestTest = async () => {
+    setDigestSending(true);
+    try {
+      await sendDigestNow();
+      alert('✓ Test digest email sent - check your inbox!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send test digest');
+    } finally {
+      setDigestSending(false);
+    }
+  };
+
+  // --- Push notifications ---
+  const handlePushEnable = async () => {
+    try {
+      const keyRes = await getVapidPublicKey();
+      if (!keyRes.data.key) {
+        alert('Push notifications are not configured on this server.');
+        return;
+      }
+      const subscription = await subscribeToPush(keyRes.data.key);
+      await savePushSubscription(subscription);
+      setPushEnabled(true);
+      alert('✓ Push notifications enabled');
+    } catch (err) {
+      alert(err.message || 'Failed to enable push notifications');
+    }
+  };
+
+  const handlePushDisable = async () => {
+    try {
+      await unsubscribeFromPush();
+      await removePushSubscription();
+      setPushEnabled(false);
+      alert('✓ Push notifications disabled');
+    } catch (err) {
+      alert('Failed to disable push notifications');
+    }
+  };
+
+  const handlePushTest = async () => {
+    setPushTestSending(true);
+    try {
+      await sendTestPush();
+      alert('✓ Test notification sent (check system notifications)');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send test notification');
+    } finally {
+      setPushTestSending(false);
+    }
   };
 
   const toggleCategory = (key) => {
@@ -303,6 +376,74 @@ const ProfilePage = () => {
 
             <button onClick={savePreferences} style={smallBtn}>{prefsSaved ? '✓ Saved' : 'Save preferences'}</button>
           </div>
+
+          <div className="card" style={{ padding: 22 }}>
+            <h4 style={{ margin: '0 0 14px' }}>Email Digest & AI Features</h4>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: 14 }}>Weekly digest email</span>
+              <label style={{ position: 'relative', display: 'inline-block', width: 42, height: 24 }}>
+                <input type="checkbox" checked={weeklyDigest} onChange={(e) => setWeeklyDigest(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                <span style={{ position: 'absolute', inset: 0, background: weeklyDigest ? 'var(--accent)' : 'var(--border)', borderRadius: 12, transition: '0.2s' }} />
+                <span style={{ position: 'absolute', top: 3, left: weeklyDigest ? 21 : 3, width: 18, height: 18, background: 'white', borderRadius: '50%', transition: '0.2s' }} />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <span style={{ fontSize: 14 }}>Monthly digest email</span>
+              <label style={{ position: 'relative', display: 'inline-block', width: 42, height: 24 }}>
+                <input type="checkbox" checked={monthlyDigest} onChange={(e) => setMonthlyDigest(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                <span style={{ position: 'absolute', inset: 0, background: monthlyDigest ? 'var(--accent)' : 'var(--border)', borderRadius: 12, transition: '0.2s' }} />
+                <span style={{ position: 'absolute', top: 3, left: monthlyDigest ? 21 : 3, width: 18, height: 18, background: 'white', borderRadius: '50%', transition: '0.2s' }} />
+              </label>
+            </div>
+
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+              Digests run on Mondays (weekly) and the 1st (monthly) at 8am server time.
+            </p>
+
+            <button onClick={handleDigestTest} disabled={digestSending} style={{ ...smallBtn, background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)' }}>
+              {digestSending ? 'Sending...' : 'Send test digest'}
+            </button>
+
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: 14 }}>AI-assisted reflection</span>
+              <label style={{ position: 'relative', display: 'inline-block', width: 42, height: 24 }}>
+                <input type="checkbox" checked={aiReflectionEnabled} onChange={(e) => setAiReflectionEnabled(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                <span style={{ position: 'absolute', inset: 0, background: aiReflectionEnabled ? 'var(--accent)' : 'var(--border)', borderRadius: 12, transition: '0.2s' }} />
+                <span style={{ position: 'absolute', top: 3, left: aiReflectionEnabled ? 21 : 3, width: 18, height: 18, background: 'white', borderRadius: '50%', transition: '0.2s' }} />
+              </label>
+            </div>
+
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+              Get a gentle follow-up question for each entry to help you reflect deeper. Uses Claude AI — your entry text is never stored on Claude's servers.
+            </p>
+
+            <button onClick={savePreferences} style={smallBtn}>{prefsSaved ? '✓ Saved' : 'Save features'}</button>
+          </div>
+
+          {pushSupported && (
+            <div className="card" style={{ padding: 22 }}>
+              <h4 style={{ margin: '0 0 12px' }}>Push Notifications</h4>
+              <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                Get system notifications for reminders, even when the app is closed.
+              </p>
+              {!pushEnabled ? (
+                <button onClick={handlePushEnable} style={smallBtn}>Enable push notifications</button>
+              ) : (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={handlePushTest} disabled={pushTestSending} style={smallBtn}>
+                    {pushTestSending ? 'Sending...' : 'Send test'}
+                  </button>
+                  <button onClick={handlePushDisable} style={{ ...smallBtn, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                    Disable
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="card" style={{ padding: 22 }}>
             <h4 style={{ margin: '0 0 8px' }}>Export & Import</h4>

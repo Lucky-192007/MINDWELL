@@ -1,5 +1,6 @@
 const JournalEntry = require('../models/JournalEntry');
 const User = require('../models/User');
+const crypto = require('crypto');
 const { encrypt, decrypt } = require('../utils/encryption');
 
 // Guided prompts, organized by category so users can pick which kinds they get
@@ -39,7 +40,7 @@ const getDailyPrompt = async (req, res) => {
 // @route POST /api/journal
 const createEntry = async (req, res) => {
   try {
-    const { content, mood, energy, prompt } = req.body;
+    const { content, mood, energy, prompt, isRichText } = req.body;
 
     if (!content || mood === undefined || energy === undefined) {
       return res.status(400).json({ message: 'content, mood and energy are required' });
@@ -53,6 +54,7 @@ const createEntry = async (req, res) => {
       content: encryptedContent,
       mood,
       energy,
+      isRichText: !!isRichText,
     });
 
     res.status(201).json({ ...entry.toObject(), content });
@@ -89,11 +91,12 @@ const updateEntry = async (req, res) => {
     const entry = await JournalEntry.findOne({ _id: req.params.id, user: req.user._id });
     if (!entry) return res.status(404).json({ message: 'Entry not found' });
 
-    const { content, mood, energy, starred } = req.body;
+    const { content, mood, energy, starred, isRichText } = req.body;
     if (content !== undefined) entry.content = encrypt(content);
     if (mood !== undefined) entry.mood = mood;
     if (energy !== undefined) entry.energy = energy;
     if (starred !== undefined) entry.starred = starred;
+    if (isRichText !== undefined) entry.isRichText = isRichText;
 
     await entry.save();
     res.json({ ...entry.toObject(), content: content ?? decrypt(entry.content) });
@@ -144,6 +147,164 @@ const importEntries = async (req, res) => {
   }
 };
 
+// Guided journaling templates - structured multi-question formats.
+// Returned as a static list; the frontend assembles the answers into one entry.
+const TEMPLATES = [
+  {
+    id: 'daily-reflection',
+    name: 'Daily Reflection',
+    questions: [
+      'What went well today?',
+      'What was challenging?',
+      'What will you do differently tomorrow?',
+    ],
+  },
+  {
+    id: 'gratitude-list',
+    name: 'Gratitude List',
+    questions: [
+      'Name three things you are grateful for today.',
+      'Who is someone you appreciate right now, and why?',
+    ],
+  },
+  {
+    id: 'thought-record',
+    name: 'Thought Record (CBT-style)',
+    questions: [
+      'What situation triggered a strong emotion today?',
+      'What thought went through your mind?',
+      'What is the evidence for and against that thought?',
+      'What is a more balanced way to see it?',
+    ],
+  },
+  {
+    id: 'goal-check-in',
+    name: 'Goal Check-In',
+    questions: [
+      'What is one goal you are working toward?',
+      'What progress did you make this week?',
+      'What is one small next step?',
+    ],
+  },
+];
+
+// @route GET /api/journal/templates
+const getTemplates = (req, res) => {
+  res.json(TEMPLATES);
+};
+
+// @route POST /api/journal/:id/share
+// Generates (or refreshes) a share token for one entry, valid for 7 days.
+const shareEntry = async (req, res) => {
+  try {
+    const entry = await JournalEntry.findOne({ _id: req.params.id, user: req.user._id });
+    if (!entry) return res.status(404).json({ message: 'Entry not found' });
+
+    entry.shareToken = crypto.randomBytes(16).toString('hex');
+    entry.shareExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await entry.save();
+
+    res.json({ shareToken: entry.shareToken, expiresAt: entry.shareExpires });
+  } catch (err) {
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// @route DELETE /api/journal/:id/share
+const revokeShare = async (req, res) => {
+  try {
+    const entry = await JournalEntry.findOne({ _id: req.params.id, user: req.user._id });
+    if (!entry) return res.status(404).json({ message: 'Entry not found' });
+    entry.shareToken = null;
+    entry.shareExpires = null;
+    await entry.save();
+    res.json({ message: 'Share link revoked' });
+  } catch (err) {
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// @route GET /api/journal/shared/:token
+// PUBLIC route (no auth) - only returns the one entry matching a valid, unexpired token.
+const getSharedEntry = async (req, res) => {
+  try {
+    const entry = await JournalEntry.findOne({ shareToken: req.params.token });
+    if (!entry || !entry.shareExpires || entry.shareExpires < new Date()) {
+      return res.status(404).json({ message: 'This share link is invalid or has expired' });
+    }
+    res.json({
+      content: decrypt(entry.content),
+      mood: entry.mood,
+      energy: entry.energy,
+      date: entry.date,
+      prompt: entry.prompt,
+      isRichText: entry.isRichText,
+    });
+  } catch (err) {
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// @route POST /api/journal/:id/reflect
+// AI-assisted reflection: sends the (decrypted, in-memory only) entry text to an LLM
+// and returns one gentle follow-up question. Opt-in only - see README for the privacy note.
+const getAiReflection = async (req, res) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(503).json({ message: 'AI reflection is not configured on this server yet.' });
+    }
+
+    const user = await User.findById(req.user._id).select('aiReflectionEnabled');
+    if (!user.aiReflectionEnabled) {
+      return res.status(403).json({ message: 'Enable AI reflection in your profile settings first.' });
+    }
+
+    const entry = await JournalEntry.findOne({ _id: req.params.id, user: req.user._id });
+    if (!entry) return res.status(404).json({ message: 'Entry not found' });
+
+    const plainText = decrypt(entry.content);
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 150,
+        messages: [
+          {
+            role: 'user',
+            content: `You are a gentle, non-clinical journaling companion. Read this private journal entry and respond with ONE short, warm, open-ended follow-up question (max 2 sentences) to help the writer reflect further. Do not give advice, diagnoses, or judgments - just one caring question.\n\nEntry:\n${plainText}`,
+          },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    const reflection = data?.content?.[0]?.text || 'What feels most important about this to you right now?';
+
+    res.json({ reflection });
+  } catch (err) {
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// @route POST /api/journal/digest/send-now
+// Lets a user trigger their own weekly digest email immediately, useful for testing
+// since the real weekly/monthly cron only fires while the server process stays running.
+const sendDigestNow = async (req, res) => {
+  try {
+    const { sendDigestForUser } = require('../utils/digest');
+    await sendDigestForUser(req.user, 7, 'weekly');
+    res.json({ message: 'Digest email sent' });
+  } catch (err) {
+    console.error(err); res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   getDailyPrompt,
   createEntry,
@@ -152,4 +313,10 @@ module.exports = {
   updateEntry,
   deleteEntry,
   importEntries,
+  getTemplates,
+  shareEntry,
+  revokeShare,
+  getSharedEntry,
+  getAiReflection,
+  sendDigestNow,
 };

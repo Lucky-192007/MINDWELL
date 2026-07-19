@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import AuthShell from '../components/AuthShell';
+import AuthCard, { authInputStyle, authLabelStyle, authButtonStyle } from '../components/AuthCard';
 import { forgotPassword, resetPassword } from '../services/api';
 
 const ForgotPasswordPage = () => {
-  const [step, setStep] = useState('request'); // request | reset
+  const [step, setStep] = useState('request');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -34,75 +33,39 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <AuthShell>
-      <motion.form
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        onSubmit={step === 'request' ? handleRequest : handleReset}
-        className="card"
-        style={{ padding: 40, width: 380, maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}
-      >
-        <h2 style={{ margin: 0 }}>Reset your password</h2>
-        <p style={{ color: 'var(--text-secondary)', marginTop: -8, fontSize: 14 }}>
-          {step === 'request' ? "We'll email you a reset code." : `Enter the code sent to ${email}.`}
-        </p>
-
+    <AuthCard icon="🔑" title="Reset Password" subtitle={step === 'request' ? "We'll email you a reset code" : `Enter the code sent to ${email}`}>
+      <form onSubmit={step === 'request' ? handleRequest : handleReset}>
         {step === 'request' ? (
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
+          <>
+            <label style={authLabelStyle}>Email address</label>
+            <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={authInputStyle} />
+          </>
         ) : (
           <>
+            <label style={authLabelStyle}>6-digit code</label>
             <input
-              placeholder="6-digit code"
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               inputMode="numeric"
               required
-              style={{ ...inputStyle, letterSpacing: 4, textAlign: 'center', fontSize: 18 }}
+              style={{ ...authInputStyle, letterSpacing: 6, textAlign: 'center', fontSize: 18 }}
             />
-            <input
-              type="password"
-              placeholder="New password (min 6 characters)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              minLength={6}
-              required
-              style={inputStyle}
-            />
+            <label style={authLabelStyle}>New password</label>
+            <input type="password" placeholder="At least 6 characters" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={6} required style={authInputStyle} />
           </>
         )}
 
-        {msg && <p style={{ color: 'var(--accent)', fontSize: 13, margin: 0 }}>{msg}</p>}
-        {error && <p style={{ color: 'var(--danger)', fontSize: 14, margin: 0 }}>{error}</p>}
+        {msg && <p style={{ color: '#8B7FF2', fontSize: 12.5, margin: '0 0 10px' }}>{msg}</p>}
+        {error && <p style={{ color: '#EE5D5D', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
 
-        <button type="submit" style={buttonStyle}>
-          {step === 'request' ? 'Send reset code' : 'Reset password'}
+        <button type="submit" style={authButtonStyle}>
+          {step === 'request' ? 'Send Reset Code' : 'Reset Password'}
         </button>
-
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', textAlign: 'center' }}>
-          <Link to="/login" style={{ color: 'var(--accent)' }}>Back to login</Link>
-        </p>
-      </motion.form>
-    </AuthShell>
+      </form>
+      <hr style={{ border: 'none', borderTop: '1px solid #212121', margin: '24px 0 16px' }} />
+      <Link to="/login" style={{ fontSize: 13, color: '#A9A1E0' }}>Back to login</Link>
+    </AuthCard>
   );
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: 12,
-  borderRadius: 10,
-  border: '1px solid var(--border)',
-  background: 'var(--bg)',
-  color: 'var(--text-primary)',
-  fontSize: 15,
-};
-
-const buttonStyle = {
-  background: 'var(--accent)',
-  color: 'white',
-  border: 'none',
-  borderRadius: 20,
-  padding: '12px 0',
-  fontSize: 15,
 };
 
 export default ForgotPasswordPage;

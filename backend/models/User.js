@@ -20,11 +20,15 @@ const userSchema = new mongoose.Schema(
     notificationPrefs: {
       dailyReminder: { type: Boolean, default: false },
       reminderTime: { type: String, default: '20:00' },
+      weeklyDigest: { type: Boolean, default: false },
+      monthlyDigest: { type: Boolean, default: false },
     },
     promptCategories: {
       type: [String],
       default: ['gratitude', 'reflection', 'goals'],
     },
+    aiReflectionEnabled: { type: Boolean, default: false },
+    pushSubscription: { type: mongoose.Schema.Types.Mixed, default: null },
 
     // Lightweight activity log - most recent 30 actions
     activityLog: [

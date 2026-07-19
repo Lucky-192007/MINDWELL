@@ -8,6 +8,10 @@ const journalEntrySchema = new mongoose.Schema(
     mood: { type: Number, min: 1, max: 10, required: true },
     energy: { type: Number, min: 1, max: 10, required: true },
     starred: { type: Boolean, default: false },
+    isRichText: { type: Boolean, default: false }, // whether content is HTML (formatted) or plain text
+    shareToken: { type: String, default: null, index: true },
+    shareExpires: { type: Date, default: null },
+    aiReflection: { type: String, default: null },
     date: { type: Date, default: Date.now },
   },
   { timestamps: true }

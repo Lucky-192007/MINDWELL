@@ -39,7 +39,7 @@ const Sidebar = () => {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', padding: '0 4px 28px', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
-          <span style={{ fontSize: 22, flexShrink: 0 }}></span>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>🌸</span>
           {!collapsed && <h2 style={{ margin: 0, fontSize: 20, whiteSpace: 'nowrap' }}>MindWell</h2>}
         </div>
         {!collapsed && (

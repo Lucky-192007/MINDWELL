@@ -23,6 +23,10 @@ export const updatePreferences = (data) => api.put('/auth/preferences', data);
 export const changePassword = (data) => api.put('/auth/password', data);
 export const getActivityLog = () => api.get('/auth/activity');
 export const deleteAccount = () => api.delete('/auth/account');
+export const getVapidPublicKey = () => api.get('/auth/vapid-public-key');
+export const savePushSubscription = (subscription) => api.post('/auth/push-subscribe', { subscription });
+export const removePushSubscription = () => api.delete('/auth/push-subscribe');
+export const sendTestPush = () => api.post('/auth/push-test');
 
 // Journal
 export const getDailyPrompt = () => api.get('/journal/prompt');
@@ -32,10 +36,17 @@ export const getEntryById = (id) => api.get(`/journal/${id}`);
 export const updateEntry = (id, data) => api.put(`/journal/${id}`, data);
 export const deleteEntry = (id) => api.delete(`/journal/${id}`);
 export const importEntries = (entries) => api.post('/journal/import', { entries });
+export const getTemplates = () => api.get('/journal/templates');
+export const shareEntryApi = (id) => api.post(`/journal/${id}/share`);
+export const revokeShareApi = (id) => api.delete(`/journal/${id}/share`);
+export const getSharedEntry = (token) => api.get(`/journal/shared/${token}`);
+export const getAiReflection = (id) => api.post(`/journal/${id}/reflect`);
+export const sendDigestNow = () => api.post('/journal/digest/send-now');
 
 // Mood / analytics
 export const getMoodHistory = () => api.get('/mood/history');
 export const getMoodDistribution = () => api.get('/mood/distribution');
+export const getMoodInsights = () => api.get('/mood/insights');
 export const getWeeklyAverage = () => api.get('/mood/weekly-average');
 export const getMonthlyAverage = () => api.get('/mood/monthly-average');
 

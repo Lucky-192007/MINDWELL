@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 
 import LandingPage from './pages/LandingPage';
+import SharedEntryPage from './pages/SharedEntryPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtpPage from './pages/VerifyOtpPage';
@@ -24,6 +25,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/shared/:token" element={<SharedEntryPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-otp" element={<VerifyOtpPage />} />

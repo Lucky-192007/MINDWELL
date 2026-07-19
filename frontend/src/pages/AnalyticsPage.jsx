@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import AppLayout from '../components/layout/AppLayout';
 import MoodLineChart from '../components/Charts/MoodLineChart';
 import MoodPieChart from '../components/Charts/MoodPieChart';
-import { getMoodHistory, getMoodDistribution, downloadJsonExport, downloadPdfExport, getEntries } from '../services/api';
+import { getMoodHistory, getMoodDistribution, getMoodInsights, downloadJsonExport, downloadPdfExport, getEntries } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const TABS = ['Overview', 'Weekly', 'Monthly', 'Yearly'];
@@ -12,12 +12,18 @@ const AnalyticsPage = () => {
   const [history, setHistory] = useState([]);
   const [distribution, setDistribution] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [insightsMsg, setInsightsMsg] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
     getMoodHistory().then((res) => setHistory(res.data));
     getMoodDistribution().then((res) => setDistribution(res.data));
     getEntries().then((res) => setEntries(res.data));
+    getMoodInsights().then((res) => {
+      setInsights(res.data.insights || []);
+      setInsightsMsg(res.data.message || '');
+    });
   }, []);
 
   const streak = (() => {
@@ -77,6 +83,21 @@ const AnalyticsPage = () => {
               Weekly/monthly averages and unlimited historical search are part of MindWell Premium.
             </p>
           </div>
+        )}
+      </div>
+
+      <div className="card" style={{ padding: 24, marginBottom: 20 }}>
+        <h3 style={{ marginTop: 0 }}>✨ Mood Insights</h3>
+        {insights.length ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {insights.map((text, i) => (
+              <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.6, padding: '10px 14px', background: 'var(--accent-soft)', borderRadius: 10 }}>
+                {text}
+              </p>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13.5 }}>{insightsMsg || 'Log a few more entries to unlock insights.'}</p>
         )}
       </div>
 

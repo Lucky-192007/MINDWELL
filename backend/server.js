@@ -1,7 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cron = require('node-cron');
 const connectDB = require('./config/db');
+const { runWeeklyDigests, runMonthlyDigests } = require('./utils/digest');
 
 const authRoutes = require('./routes/authRoutes');
 const journalRoutes = require('./routes/journalRoutes');
@@ -35,3 +37,14 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`MindWell backend running on port ${PORT}`));
+
+// Weekly digest: every Monday at 8am server time.
+// Monthly digest: 1st of the month at 8am server time.
+// NOTE: these only fire while this Node process stays running - there's no
+// external job runner here, so if the server restarts/sleeps, scheduled runs are skipped.
+cron.schedule('0 8 * * 1', () => {
+  runWeeklyDigests().then((n) => console.log(`Weekly digest sent to ${n} users`)).catch(console.error);
+});
+cron.schedule('0 8 1 * *', () => {
+  runMonthlyDigests().then((n) => console.log(`Monthly digest sent to ${n} users`)).catch(console.error);
+});
