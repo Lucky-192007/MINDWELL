@@ -11,38 +11,35 @@ const generateToken = (id) =>
 // No JWT is issued yet - that happens after verifyOtp succeeds.
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, phone, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Please fill in all fields' });
+      return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'An account with this email already exists' });
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'Email already registered' });
     }
 
     const otp = generateOtp();
-    const user = await User.create({
+    user = new User({
       name,
       email,
+      phone: phone || null, // Optional phone
       password,
       otpCode: otp,
-      otpExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      otpExpires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    try {
-      await sendOtpEmail(email, name, otp);
-    } catch (emailErr) {
-      console.error('Failed to send OTP email:', emailErr.message);
-      // Don't block registration if email sending fails in dev - the OTP is still on the record.
-      // In production you'd want stricter handling here.
-    }
+    await user.save();
+
+    // Send OTP email - don't await, send in background
+    sendOtpEmail(email, name, otp).catch((err) => console.error('OTP email failed:', err.message));
 
     res.status(201).json({
-      message: 'Verification code sent to your email',
-      email: user.email,
-      requiresOtp: true,
+      message: 'Account created. Check your email for verification code.',
+      pendingOtpEmail: email,
     });
   } catch (err) {
     console.error(err);
