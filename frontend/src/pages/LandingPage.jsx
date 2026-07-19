@@ -78,27 +78,18 @@ const LandingPage = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 70 }}>
           {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.title}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-              animate={{ scale: hovered === i ? 1.03 : 1, y: hovered === i ? -4 : 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              style={{
-                background: '#131313',
-                border: hovered === i ? '1px solid #6C5CE7' : '1px solid #212121',
-                borderRadius: 16,
-                padding: 24,
-                cursor: 'default',
-                boxShadow: hovered === i ? '0 12px 32px rgba(108,92,231,0.25)' : 'none',
-              }}
-            >
-              <span style={{ fontSize: 22 }}>{f.icon}</span>
-              <h3 style={{ margin: '12px 0 8px', fontSize: 16 }}>{f.title}</h3>
-              <p style={{ margin: 0, fontSize: 13, color: '#9490AC', lineHeight: 1.6 }}>
-                {hovered === i ? f.long : f.short}
-              </p>
-            </motion.div>
+            <motion.h1
+  initial={{ opacity: 0, y: 12 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.1 }}
+  style={{ fontSize: 48, lineHeight: 1.15, margin: '0 0 8px' }}
+>
+  Write Freely.
+  <br />
+  <span style={{ color: '#A78BFA' }}>
+    Nobody Else Can Read It.
+  </span>
+</motion.h1>
           ))}
         </div>
 
