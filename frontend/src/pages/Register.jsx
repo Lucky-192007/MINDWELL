@@ -11,22 +11,23 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState('');
   const { register } = useAuth();
+  const [phone, setPhone] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await register(name, email, password);
-      setToast('✓ Code sent to your email');
-      setTimeout(() => navigate('/verify-otp'), 500);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  try {
+    await register(name, email, phone, password); // Pass phone
+    setToast('✓ Code sent - check your email');
+    setTimeout(() => navigate('/verify-otp'), 500);
+  } catch (err) {
+    setError(err.response?.data?.message || 'Registration failed');
+  } finally {
+    setLoading(false);
+  }
+};
 return (
   <AuthCard icon="🌸" title="Create Your Space" subtitle="Private, encrypted, yours alone" toast={toast}>
     <form onSubmit={handleSubmit}>
