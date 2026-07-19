@@ -27,32 +27,34 @@ const Register = () => {
       setLoading(false);
     }
   };
+return (
+  <AuthCard icon="🌸" title="Create Your Space" subtitle="Private, encrypted, yours alone" toast={toast}>
+    <form onSubmit={handleSubmit}>
+      <label style={authLabelStyle}>Name</label>
+      <input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required style={authInputStyle} />
 
-  return (
-    <AuthCard icon="🌸" title="Create Your Space" subtitle="Private, encrypted, yours alone" toast={toast}>
-      <form onSubmit={handleSubmit}>
-        <label style={authLabelStyle}>Name</label>
-        <input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required style={authInputStyle} />
+      <label style={authLabelStyle}>Email address</label>
+      <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={authInputStyle} />
 
-        <label style={authLabelStyle}>Email address</label>
-        <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={authInputStyle} />
+      <label style={authLabelStyle}>Phone (Optional)</label>
+      <input type="tel" placeholder="+1 (555) 000-0000 - leave blank if you don't have one" value={phone} onChange={(e) => setPhone(e.target.value)} style={authInputStyle} />
 
-        <label style={authLabelStyle}>Password</label>
-        <input type="password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={authInputStyle} />
+      <label style={authLabelStyle}>Password</label>
+      <input type="password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} style={authInputStyle} />
 
-        {error && <p style={{ color: '#EE5D5D', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
+      {error && <p style={{ color: '#EE5D5D', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
 
-        <button type="submit" disabled={loading} style={{ ...authButtonStyle, opacity: loading ? 0.7 : 1 }}>
-          {loading ? 'Creating account...' : 'Create Account'}
-        </button>
-      </form>
+      <button type="submit" disabled={loading} style={{ ...authButtonStyle, opacity: loading ? 0.7 : 1 }}>
+        {loading ? 'Creating account...' : 'Create Account'}
+      </button>
+    </form>
 
-      <hr style={{ border: 'none', borderTop: '1px solid #212121', margin: '24px 0' }} />
-      <p style={{ fontSize: 13, color: '#9490AC', margin: 0 }}>
-        Already have an account? <Link to="/login" style={{ color: '#A9A1E0' }}>Log in</Link>
-      </p>
-    </AuthCard>
-  );
+    <hr style={{ border: 'none', borderTop: '1px solid #212121', margin: '24px 0' }} />
+    <p style={{ fontSize: 13, color: '#9490AC', margin: 0 }}>
+      Already have an account? <Link to="/login" style={{ color: '#A9A1E0' }}>Log in</Link>
+    </p>
+  </AuthCard>
+);
 };
 
 export default Register;
