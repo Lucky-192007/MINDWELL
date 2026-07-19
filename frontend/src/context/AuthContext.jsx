@@ -39,11 +39,10 @@ export const AuthProvider = ({ children }) => {
 
   // Registration never logs the user in directly - it sends an OTP and
   // the caller should route to the verification screen.
-  const register = async (name, email, password) => {
-    const res = await registerUser({ name, email, password });
-    setPendingOtpEmail(res.data.email);
-    return res.data;
-  };
+const register = async (name, email, phone, password) => {
+  const response = await registerUser({ name, email, phone, password });
+  setPendingOtpEmail(response.data.pendingOtpEmail);
+};
 
   const verifyOtp = async (email, otp) => {
     const res = await verifyOtpApi({ email, otp });
