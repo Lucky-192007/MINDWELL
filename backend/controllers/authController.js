@@ -50,14 +50,14 @@ const registerUser = async (req, res) => {
 
     await user.save();
 
-    // Send OTP
+    // Send OTP asynchronously without blocking the response (prevents timeout crashes)
     if (email) {
-      sendOtpEmail(email, name, otp).catch(err => console.error('Email failed:', err));
+      sendOtpEmail(email, name, otp).catch(err => console.error('Non-blocking email send error:', err.message));
     } else if (phone) {
-      const { sendSMS } = require('../utils/sms');
-      sendSMS(phone, `Your MindWell verification code is: ${otp}`).catch(err => console.error('SMS failed:', err));
+      sendSMS(phone, `Your MindWell verification code is: ${otp}`).catch(err => console.error('Non-blocking SMS send error:', err.message));
     }
 
+    // Respond immediately to the frontend
     res.status(201).json({
       message: `Verification code sent to your ${loginMethod}`,
       pendingOtpEmail: email || phone,
