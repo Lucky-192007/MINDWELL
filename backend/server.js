@@ -19,10 +19,8 @@ app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json({ limit: '6mb' }));
 
 app.get('/', (req, res) => res.json({ message: 'MindWell API is running' }));
-
 app.use('/api/auth', authRoutes);
 app.use('/api/themes', themeRoutes);
-
 app.use('/api/journal', journalRoutes);
 app.use('/api/mood', moodRoutes);
 app.use('/api/export', exportRoutes);
