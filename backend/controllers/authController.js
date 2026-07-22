@@ -1,255 +1,287 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const JournalEntry = require('../models/JournalEntry');
+const jwt = require('jsonwebtoken');
 const { generateOtp, sendOtpEmail } = require('../utils/email');
+const { sendSMS } = require('../utils/sms');
+const { sendPush } = require('../utils/push');
 
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-
-// @route POST /api/auth/register
-// Creates the account as unverified and emails a 6-digit OTP.
-// No JWT is issued yet - that happens after verifyOtp succeeds.
 const registerUser = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    // Validate input
+    if (!name || !password) {
+      return res.status(400).json({ message: 'Name and password required' });
     }
 
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'Email already registered' });
+    if (!email && !phone) {
+      return res.status(400).json({ message: 'Email or phone number required' });
     }
 
+    // Check if email exists
+    if (email) {
+      const exists = await User.findOne({ email });
+      if (exists) return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    // Check if phone exists
+    if (phone) {
+      const exists = await User.findOne({ phone });
+      if (exists) return res.status(400).json({ message: 'Phone already registered' });
+    }
+
+    // Determine login method
+    const loginMethod = email ? 'email' : 'phone';
+
+    // Generate OTP
     const otp = generateOtp();
-    user = new User({
+
+    // Create user
+    const user = new User({
       name,
-      email,
-      phone: phone || null, // Optional phone
+      email: email || null,
+      phone: phone || null,
       password,
+      loginMethod,
+      isPremium: false,
+      isVerified: false,
       otpCode: otp,
       otpExpires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
     await user.save();
 
-    // Send OTP email - don't await, send in background
-    sendOtpEmail(email, name, otp).catch((err) => console.error('OTP email failed:', err.message));
+    // Send OTP
+    if (email) {
+      sendOtpEmail(email, name, otp).catch(err => console.error('Email failed:', err));
+    } else if (phone) {
+      const { sendSMS } = require('../utils/sms');
+      sendSMS(phone, `Your MindWell verification code is: ${otp}`).catch(err => console.error('SMS failed:', err));
+    }
 
     res.status(201).json({
-      message: 'Account created. Check your email for verification code.',
-      pendingOtpEmail: email,
+      message: `Verification code sent to your ${loginMethod}`,
+      pendingOtpEmail: email || phone,
     });
   } catch (err) {
-    console.error(err);
+    console.error('Register error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route POST /api/auth/verify-otp
 const verifyOtp = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    const user = await User.findOne({ email });
+    const { emailOrPhone, otp } = req.body;
+    if (!emailOrPhone || !otp) {
+      return res.status(400).json({ message: 'Email/phone and OTP required' });
+    }
 
-    if (!user) return res.status(404).json({ message: 'Account not found' });
-    if (user.isVerified) return res.status(400).json({ message: 'Account already verified' });
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }],
+    });
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
     if (!user.otpCode || !user.otpExpires || user.otpExpires < new Date()) {
-      return res.status(400).json({ message: 'Code expired. Please request a new one.' });
+      return res.status(400).json({ message: 'OTP expired. Request a new one.' });
     }
     if (user.otpCode !== otp) {
-      return res.status(400).json({ message: 'Incorrect code' });
+      return res.status(400).json({ message: 'Incorrect OTP' });
     }
 
     user.isVerified = true;
     user.otpCode = null;
     user.otpExpires = null;
-    user.logActivity('Verified account via email OTP');
+    user.logActivity('Verified email/phone via OTP');
     await user.save();
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isPremium: user.isPremium,
-      avatar: user.avatar,
-      themeColor: user.themeColor,
-      token: generateToken(user._id),
-    });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route POST /api/auth/resend-otp
 const resendOtp = async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Account not found' });
-    if (user.isVerified) return res.status(400).json({ message: 'Account already verified' });
+    const { emailOrPhone } = req.body;
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }],
+    });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const otp = generateOtp();
     user.otpCode = otp;
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    await sendOtpEmail(email, user.name, otp);
-    res.json({ message: 'A new code has been sent' });
+    if (user.email) {
+      sendOtpEmail(user.email, user.name, otp).catch(() => {});
+    } else if (user.phone) {
+      sendSMS(user.phone, `Your MindWell verification code is: ${otp}`).catch(() => {});
+    }
+
+    res.json({ message: 'Verification code resent' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route POST /api/auth/login
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const { emailOrPhone, password } = req.body;
 
-    if (!user || !(await user.matchPassword(password))) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+    if (!emailOrPhone || !password) {
+      return res.status(400).json({ message: 'Email/phone and password required' });
     }
 
+    // Find user by email OR phone
+    const user = await User.findOne({
+      $or: [{ email: emailOrPhone }, { phone: emailOrPhone }],
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email/phone or password' });
+    }
+
+    // Check if verified
     if (!user.isVerified) {
-      return res.status(403).json({ message: 'Please verify your email first', requiresOtp: true, email: user.email });
+      const otp = generateOtp();
+      user.otpCode = otp;
+      user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+      await user.save();
+
+      // Send OTP
+      if (user.email) {
+        sendOtpEmail(user.email, user.name, otp).catch(err => console.error('Email failed:', err));
+      } else if (user.phone) {
+        const { sendSMS } = require('../utils/sms');
+        sendSMS(user.phone, `Your MindWell verification code is: ${otp}`).catch(err => console.error('SMS failed:', err));
+      }
+
+      return res.status(400).json({
+        requiresOtp: true,
+        pendingOtpEmail: user.email || user.phone,
+      });
+    }
+
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email/phone or password' });
     }
 
     user.logActivity('Logged in');
     await user.save();
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isPremium: user.isPremium,
-      avatar: user.avatar,
-      themeColor: user.themeColor,
-      token: generateToken(user._id),
-    });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user });
   } catch (err) {
-    console.error(err);
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route GET /api/auth/me
 const getMe = async (req, res) => {
-  res.json(req.user);
+  try {
+    const user = await User.findById(req.user._id).populate('currentTheme').select('-password');
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
 };
 
-// @route PUT /api/auth/profile
 const updateProfile = async (req, res) => {
   try {
     const { name, avatar, themeColor } = req.body;
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    if (name !== undefined) user.name = name;
-    if (themeColor !== undefined) user.themeColor = themeColor;
-    if (avatar !== undefined) {
-      if (avatar.length > 4_000_000) {
-        return res.status(400).json({ message: 'Image is too large. Please choose a smaller photo.' });
-      }
-      user.avatar = avatar;
-      user.logActivity('Updated profile photo');
-    }
-    if (name !== undefined) user.logActivity('Updated profile name');
-
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name, avatar, themeColor },
+      { new: true }
+    ).select('-password');
+    user.logActivity('Updated profile');
     await user.save();
-    const updated = user.toObject();
-    delete updated.password;
-    res.json(updated);
+    res.json(user);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route PUT /api/auth/preferences
 const updatePreferences = async (req, res) => {
   try {
-    const { dailyReminder, reminderTime, promptCategories, weeklyDigest, monthlyDigest, aiReflectionEnabled } = req.body;
+    const { dailyReminder, reminderTime, reminderMethod, promptCategories, weeklyDigest, monthlyDigest, aiReflectionEnabled } = req.body;
+    
     const user = await User.findById(req.user._id);
 
-    if (dailyReminder !== undefined) user.notificationPrefs.dailyReminder = dailyReminder;
-    if (reminderTime !== undefined) user.notificationPrefs.reminderTime = reminderTime;
-    if (weeklyDigest !== undefined) user.notificationPrefs.weeklyDigest = weeklyDigest;
-    if (monthlyDigest !== undefined) user.notificationPrefs.monthlyDigest = monthlyDigest;
-    if (promptCategories !== undefined) user.promptCategories = promptCategories;
+    // SMS reminders only for PRO users
+    let finalReminderMethod = reminderMethod || user.notificationPrefs.reminderMethod;
+    if (finalReminderMethod === 'sms' && !user.isPremium) {
+      finalReminderMethod = 'email'; // Force email for non-pro users
+    }
+
+    user.notificationPrefs = {
+      dailyReminder: dailyReminder !== undefined ? dailyReminder : user.notificationPrefs.dailyReminder,
+      reminderTime: reminderTime || user.notificationPrefs.reminderTime,
+      reminderMethod: finalReminderMethod,
+      emailDigest: user.notificationPrefs.emailDigest,
+      weeklyDigest: weeklyDigest !== undefined ? weeklyDigest : user.notificationPrefs.weeklyDigest,
+      monthlyDigest: monthlyDigest !== undefined ? monthlyDigest : user.notificationPrefs.monthlyDigest,
+    };
+
+    if (promptCategories) user.promptCategories = promptCategories;
     if (aiReflectionEnabled !== undefined) user.aiReflectionEnabled = aiReflectionEnabled;
 
     user.logActivity('Updated preferences');
     await user.save();
-    const updated = user.toObject();
-    delete updated.password;
-    res.json(updated);
+    res.json(user);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route PUT /api/auth/password
+
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'Both current and new password are required' });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'New password must be at least 6 characters' });
-    }
-
     const user = await User.findById(req.user._id);
-    const matches = await user.matchPassword(currentPassword);
-    if (!matches) {
-      return res.status(401).json({ message: 'Current password is incorrect' });
-    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) return res.status(401).json({ message: 'Current password incorrect' });
 
     user.password = newPassword;
     user.logActivity('Changed password');
     await user.save();
-    res.json({ message: 'Password updated successfully' });
+    res.json({ message: 'Password changed successfully' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route GET /api/auth/activity
 const getActivityLog = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('activityLog');
-    res.json(user.activityLog);
+    res.json(user.activityLog.slice(-30));
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route DELETE /api/auth/account
 const deleteAccount = async (req, res) => {
   try {
+    const JournalEntry = require('../models/JournalEntry');
     await JournalEntry.deleteMany({ user: req.user._id });
     await User.findByIdAndDelete(req.user._id);
-    res.json({ message: 'Account and all journal data deleted' });
+    res.json({ message: 'Account deleted' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// @route POST /api/auth/forgot-password
-// Sends a reset code to the user's email (reuses the same OTP fields on the model)
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
-    // Always respond success even if not found, to avoid leaking which emails are registered
     if (!user) return res.json({ message: 'If that email exists, a reset code has been sent.' });
 
     const otp = generateOtp();
@@ -265,7 +297,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// @route POST /api/auth/reset-password
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -298,7 +329,6 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// @route POST /api/auth/push-subscribe
 const savePushSubscription = async (req, res) => {
   try {
     const { subscription } = req.body;
@@ -313,7 +343,6 @@ const savePushSubscription = async (req, res) => {
   }
 };
 
-// @route DELETE /api/auth/push-subscribe
 const removePushSubscription = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -326,17 +355,15 @@ const removePushSubscription = async (req, res) => {
   }
 };
 
-// @route POST /api/auth/push-test
 const sendTestPush = async (req, res) => {
   try {
-    const { sendPush } = require('../utils/push');
     const user = await User.findById(req.user._id);
     if (!user.pushSubscription) {
       return res.status(400).json({ message: 'No push subscription on file. Enable notifications first.' });
     }
     await sendPush(user.pushSubscription, {
       title: 'MindWell',
-      body: "This is a test notification. Your reminders will look like this.",
+      body: 'This is a test notification. Your reminders will look like this.',
     });
     res.json({ message: 'Test notification sent' });
   } catch (err) {
@@ -345,7 +372,6 @@ const sendTestPush = async (req, res) => {
   }
 };
 
-// @route GET /api/auth/vapid-public-key
 const getVapidPublicKey = (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC_KEY || null });
 };

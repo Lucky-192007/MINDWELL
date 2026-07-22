@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  pool: true, // Use connection pooling for speed
+  pool: true,
   maxConnections: 5,
   maxMessages: 100,
 });
@@ -28,7 +28,7 @@ const sendOtpEmail = async (toEmail, name, otp) => {
           <p style="color: #8B889C; font-size: 13px;">This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
         </div>
       `,
-      priority: 'high', // Send faster
+      priority: 'high',
     });
     return true;
   } catch (error) {
@@ -37,4 +37,4 @@ const sendOtpEmail = async (toEmail, name, otp) => {
   }
 };
 
-module.exports = { generateOtp, sendOtpEmail };
+module.exports = { transporter, generateOtp, sendOtpEmail };

@@ -147,3 +147,96 @@ PackageInstallsSizeAddsvite-plugin-pwaPWA generator~200KBOffline, install, manif
 These are build-time only — they don't add to your final app size. They just help create the PWA files.
 
 TL;DR: Install all three. They work together to make your app installable, offline-capable, and reactive. Without them, you just have a regular website. 📱 → 📲
+
+# What is TWILIO?
+Twilio is a service that sends SMS text messages and phone calls programmatically.
+ --  Simple Example
+Instead of manually texting a user, your code can do it:
+
+javascript// Without Twilio (manual):
+You: "Let me text this user..."
+Text: "Your MindWell code is 123456"
+
+// With Twilio (automated):
+Your code: sendSMS("+1234567890", "Your code is 123456")
+Twilio: Automatically sends the text message
+
+# Why You Need It
+In MindWell, when a user registers with a phone number instead of email:
+
+User enters phone: +1 (555) 123-4567
+Backend generates OTP: 456789
+Twilio sends SMS: "Your MindWell code is 456789"
+User receives text message ✅
+User enters code to verify account
+
+
+# How to Get TWILIO
+Step 1: Sign Up (FREE)
+Go to https://www.twilio.com/
+Click "Sign Up" → Create account
+You get $15 free credit (enough for ~150 SMS)
+Step 2: Get Your Credentials
+After login, go to Console Dashboard:
+
+Account SID: ACxxxxxxxxxxxxxxxxxxxxx
+Auth Token: abcdef123456789...
+
+Copy these.
+Step 3: Get a Phone Number
+In Twilio console:
+
+Click "Phone Numbers"
+Click "Get a Number"
+Choose country (e.g., USA)
+Copy the number (e.g., +1 (555) 123-4567)
+
+Step 4: Add to backend/.env
+envTWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=abcdef123456789...
+TWILIO_PHONE_NUMBER=+1 (555) 123-4567
+
+# What is ANTHROPIC_API_KEY?
+Anthropic is the company that makes Claude AI (the AI I am).
+ANTHROPIC_API_KEY lets your app use Claude AI to generate text responses.
+Why You Need It
+In MindWell, when a user clicks "✨ Reflect" on a journal entry:
+Your entry: "I felt sad today because work was stressful"
+
+Claude AI generates: "What specific situation at work triggered you most?"
+Without the key → Reflection feature doesn't work.
+
+How to Get ANTHROPIC_API_KEY
+Step 1: Go to Anthropic Console
+https://console.anthropic.com/
+Step 2: Sign Up / Login
+Create account or login
+Step 3: Get API Key
+
+Click "API Keys" in left menu
+Click "Create Key"
+Copy the key: sk-ant-xxxxxxxxxxxxxxxxxxxxx
+
+Step 4: Add to backend/.env
+envANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxx
+
+# What are VAPID_PUBLIC_KEY & VAPID_PRIVATE_KEY?
+VAPID = "Voluntary Application Server Identification"
+These are keys for Push Notifications (the browser notifications that show even when app is closed).
+Think of it like:
+
+Public key = Your app's ID to the push service
+Private key = Your secret to prove it's really you
+
+
+How to Get VAPID Keys
+Step 1: Open Terminal
+bashcd backend
+npx web-push generate-vapid-keys
+Step 2: Copy the Output
+You'll see:
+Public Key: BC1234567890abcdefghijklmnopqrstuvwxyzABC...
+Private Key: 1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z...
+Step 3: Add to backend/.env
+envVAPID_PUBLIC_KEY=BC1234567890abcdefghijklmnopqrstuvwxyzABC...
+VAPID_PRIVATE_KEY=1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z...

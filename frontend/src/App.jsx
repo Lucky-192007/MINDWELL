@@ -17,6 +17,8 @@ import CalendarPage from './pages/CalendarPage';
 import BreathingPage from './pages/BreathingPage';
 import PremiumPage from './pages/PremiumPage';
 import ProfilePage from './pages/ProfilePage';
+import ThemesPage from './pages/ThemesPage';
+
 
 function App() {
   return (
@@ -39,6 +41,8 @@ function App() {
             <Route path="/breathe" element={<ProtectedRoute><BreathingPage /></ProtectedRoute>} />
             <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/themes" element={<ProtectedRoute><ThemesPage /></ProtectedRoute>} />
+
           </Routes>
         </BrowserRouter>
       </AuthProvider>

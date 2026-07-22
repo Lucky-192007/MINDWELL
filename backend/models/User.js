@@ -4,34 +4,32 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    phone: { type: String, default: null }, // NEW - Optional phone number
+    email: { type: String, default: null, unique: true, sparse: true, lowercase: true, trim: true },
+    phone: { type: String, default: null, unique: true, sparse: true, trim: true },
     password: { type: String, required: true },
+    loginMethod: { type: String, enum: ['email', 'phone'], default: 'email', required: true },
     avatar: { type: String, default: '' },
     isPremium: { type: Boolean, default: false },
-    darkMode: { type: Boolean, default: true },
-
-    // Email verification / OTP (two-factor at registration)
+    themeColor: { type: String, default: 'purple' },
     isVerified: { type: Boolean, default: false },
     otpCode: { type: String, default: null },
     otpExpires: { type: Date, default: null },
 
-    // Preferences
-    themeColor: { type: String, default: 'purple' }, // purple | teal | rose | amber
     notificationPrefs: {
-      dailyReminder: { type: Boolean, default: false },
-      reminderTime: { type: String, default: '20:00' },
-      weeklyDigest: { type: Boolean, default: false },
-      monthlyDigest: { type: Boolean, default: false },
-    },
-    promptCategories: {
-      type: [String],
-      default: ['gratitude', 'reflection', 'goals'],
-    },
+  dailyReminder: { type: Boolean, default: false },
+  reminderTime: { type: String, default: '20:00' },
+  reminderMethod: { type: String, enum: ['email', 'sms'], default: 'email' },
+  emailDigest: { type: String, default: 'off' },
+  weeklyDigest: { type: Boolean, default: false },
+  monthlyDigest: { type: Boolean, default: false },
+},
+
     aiReflectionEnabled: { type: Boolean, default: false },
     pushSubscription: { type: mongoose.Schema.Types.Mixed, default: null },
+    promptCategories: { type: [String], default: ['gratitude', 'reflection', 'goals'] },
+    currentTheme: { type: mongoose.Schema.Types.ObjectId, ref: 'Theme', default: null },
+    customThemes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Theme' }],
 
-    // Lightweight activity log - most recent 30 actions
     activityLog: [
       {
         action: String,
@@ -42,20 +40,32 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre('save', async function () {
-  if (!this.isModified('password')) return;
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+userSchema.pre('validate', function (next) {
+  if (!this.email && !this.phone) {
+    return next(new Error('Either email or phone is required'));
+  }
+  next();
 });
 
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return;
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  } catch (error) {
+    next(error);
+  }
+});
+
+userSchema.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
 };
 
-// Push an activity entry, keeping only the most recent 30
 userSchema.methods.logActivity = function (action) {
-  this.activityLog.unshift({ action, timestamp: new Date() });
-  if (this.activityLog.length > 30) this.activityLog = this.activityLog.slice(0, 30);
+  this.activityLog.push({ action, timestamp: new Date() });
+  if (this.activityLog.length > 30) {
+    this.activityLog = this.activityLog.slice(-30);
+  }
 };
 
 module.exports = mongoose.model('User', userSchema);

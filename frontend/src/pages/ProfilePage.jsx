@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import CalendarHeatmap from '../components/CalendarHeatmap';
@@ -23,12 +24,6 @@ import {
 } from '../services/api';
 import { isPushSupported, subscribeToPush, unsubscribeFromPush } from '../utils/push';
 
-const PROMPT_CATEGORY_OPTIONS = [
-  { key: 'gratitude', label: 'Gratitude' },
-  { key: 'reflection', label: 'Reflection' },
-  { key: 'goals', label: 'Goals' },
-];
-
 const ProfilePage = () => {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -49,6 +44,7 @@ const ProfilePage = () => {
 
   const [dailyReminder, setDailyReminder] = useState(user?.notificationPrefs?.dailyReminder || false);
   const [reminderTime, setReminderTime] = useState(user?.notificationPrefs?.reminderTime || '20:00');
+  const [reminderMethod, setReminderMethod] = useState(user?.notificationPrefs?.reminderMethod || 'email');
   const [prefsSaved, setPrefsSaved] = useState(false);
 
   const [promptCategories, setPromptCategories] = useState(user?.promptCategories || ['gratitude', 'reflection', 'goals']);
@@ -56,6 +52,7 @@ const ProfilePage = () => {
   const [weeklyDigest, setWeeklyDigest] = useState(user?.notificationPrefs?.weeklyDigest || false);
   const [monthlyDigest, setMonthlyDigest] = useState(user?.notificationPrefs?.monthlyDigest || false);
   const [aiReflectionEnabled, setAiReflectionEnabled] = useState(user?.aiReflectionEnabled || false);
+  
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported] = useState(isPushSupported());
   const [digestSending, setDigestSending] = useState(false);
@@ -133,19 +130,24 @@ const ProfilePage = () => {
     }
   };
 
-  // --- Preferences (including digest + AI) ---
+  // --- Preferences (Unified Saver) ---
   const savePreferences = async () => {
-    const res = await updatePreferences({ 
-      dailyReminder, 
-      reminderTime, 
-      promptCategories,
-      weeklyDigest,
-      monthlyDigest,
-      aiReflectionEnabled,
-    });
-    setUser(res.data);
-    setPrefsSaved(true);
-    setTimeout(() => setPrefsSaved(false), 2000);
+    try {
+      const res = await updatePreferences({ 
+        dailyReminder, 
+        reminderTime, 
+        reminderMethod,
+        promptCategories,
+        weeklyDigest,
+        monthlyDigest,
+        aiReflectionEnabled,
+      });
+      setUser(res.data);
+      setPrefsSaved(true);
+      setTimeout(() => setPrefsSaved(false), 2000);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to save preferences');
+    }
   };
 
   const handleDigestTest = async () => {
@@ -200,10 +202,6 @@ const ProfilePage = () => {
     }
   };
 
-  const toggleCategory = (key) => {
-    setPromptCategories((prev) => (prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]));
-  };
-
   // --- Data import ---
   const handleImportFile = async (e) => {
     const file = e.target.files?.[0];
@@ -212,7 +210,7 @@ const ProfilePage = () => {
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
-      const entriesToImport = parsed.entries || parsed; // supports our own export shape or a raw array
+      const entriesToImport = parsed.entries || parsed; 
       const res = await importEntries(entriesToImport);
       setImportMsg(`✓ ${res.data.message}`);
       getEntries().then((r) => setEntries(r.data));
@@ -344,32 +342,56 @@ const ProfilePage = () => {
             </div>
 
             {dailyReminder && (
-              <input
-                type="time"
-                value={reminderTime}
-                onChange={(e) => setReminderTime(e.target.value)}
-                style={{ padding: 8, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', marginBottom: 12 }}
-              />
+              <div style={{ marginBottom: 12, padding: 12, background: 'var(--accent-soft)', borderRadius: 10 }}>
+                <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                  Reminder time
+                </label>
+                <input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} style={{ width: '100%', padding: 8 }} />
+
+                {user?.isPremium ? (
+                  <>
+                    <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', margin: '10px 0 6px' }}>
+                      Send via
+                    </label>
+                    <select
+                      value={reminderMethod}
+                      onChange={(e) => setReminderMethod(e.target.value)}
+                      style={{ width: '100%', padding: 8, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="email">📧 Email</option>
+                      <option value="sms">📱 SMS (PRO)</option>
+                    </select>
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '6px 0 0' }}>✓ You have PRO access</p>
+                  </>
+                ) : (
+                  <div style={{ marginTop: 8, padding: 8, background: 'rgba(245, 165, 93, 0.1)', borderRadius: 8, borderLeft: '3px solid #F5A55D' }}>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+                      📧 Email reminders (free). <Link to="/premium" style={{ color: 'var(--accent)' }}>Upgrade to PRO</Link> for SMS reminders.
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
 
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 14px' }}>
-              Note: this saves your preference, but sending the actual reminder needs a background scheduler which isn't wired up in this build yet.
-            </p>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '14px 0' }} />
 
-            <p style={{ fontSize: 13.5, margin: '0 0 8px', fontWeight: 600 }}>Prompt categories</p>
+            <h4 style={{ margin: '14px 0 10px' }}>Prompt categories</h4>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-              {PROMPT_CATEGORY_OPTIONS.map((c) => (
+              {['Gratitude', 'Reflection', 'Goals'].map((cat) => (
                 <button
-                  key={c.key}
-                  onClick={() => toggleCategory(c.key)}
+                  key={cat}
+                  onClick={() => setPromptCategories(promptCategories.includes(cat.toLowerCase()) ? promptCategories.filter(p => p !== cat.toLowerCase()) : [...promptCategories, cat.toLowerCase()])}
                   style={{
-                    padding: '6px 14px', borderRadius: 14, fontSize: 12.5,
-                    border: promptCategories.includes(c.key) ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                    background: promptCategories.includes(c.key) ? 'var(--accent-soft)' : 'transparent',
-                    color: promptCategories.includes(c.key) ? 'var(--accent)' : 'var(--text-secondary)',
+                    padding: '8px 16px',
+                    borderRadius: 20,
+                    border: 'none',
+                    background: promptCategories.includes(cat.toLowerCase()) ? 'var(--accent)' : 'var(--bg-elevated)',
+                    color: promptCategories.includes(cat.toLowerCase()) ? 'white' : 'var(--text-secondary)',
+                    fontSize: 13,
+                    cursor: 'pointer',
                   }}
                 >
-                  {c.label}
+                  {cat}
                 </button>
               ))}
             </div>
@@ -533,6 +555,6 @@ const Stat = ({ value, label }) => (
   </div>
 );
 
-const smallBtn = { background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 14, padding: '8px 16px', fontSize: 13 };
+const smallBtn = { background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 14, padding: '8px 16px', fontSize: 13, cursor: 'pointer' };
 
 export default ProfilePage;

@@ -24,14 +24,14 @@ export const AuthProvider = ({ children }) => {
 
   // Login may succeed immediately, or come back requiring OTP verification
   // (e.g. account created but never verified).
-  const login = async (email, password) => {
+  const login = async (emailOrPhone, password) => {
     try {
-      const res = await loginUser({ email, password });
+      const res = await loginUser({ emailOrPhone, password });
       localStorage.setItem('mindwell_token', res.data.token);
-      setUser(res.data);
+      setUser(res.data.user || res.data); // depending on your backend response structure
     } catch (err) {
       if (err.response?.data?.requiresOtp) {
-        setPendingOtpEmail(err.response.data.email);
+        setPendingOtpEmail(err.response.data.pendingOtpEmail || err.response.data.email);
       }
       throw err;
     }

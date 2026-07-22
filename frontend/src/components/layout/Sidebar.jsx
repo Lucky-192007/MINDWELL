@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/journal', label: 'Write Journal', icon: '📝' },
   { to: '/analytics', label: 'Mood Analytics', icon: '📊' },
+  { to: '/themes', label: 'Themes', icon: '🎨' },
   { to: '/breathe', label: 'Breathing Exercise', icon: '🌬️' },
   { to: '/journals', label: 'Journals', icon: '📓' },
   { to: '/calendar', label: 'Calendar', icon: '📅' },

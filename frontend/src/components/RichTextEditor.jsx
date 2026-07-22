@@ -58,7 +58,6 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
     updateActiveCommands();
   };
 
-  // Check which commands are currently active
   const updateActiveCommands = () => {
     setActiveCommands({
       bold: document.queryCommandState('bold'),

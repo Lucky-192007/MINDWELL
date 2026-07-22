@@ -1,7 +1,6 @@
 {
   "name": "mindwell-backend",
   "version": "1.0.0",
-  "description": "MindWell - Mental Wellness Journal API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -17,6 +16,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.13",
     "pdfkit": "^0.15.0",
+    "twilio": "^4.23.0",
     "web-push": "^3.6.7"
   },
   "devDependencies": {

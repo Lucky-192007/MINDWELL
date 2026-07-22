@@ -50,6 +50,12 @@ export const getMoodInsights = () => api.get('/mood/insights');
 export const getWeeklyAverage = () => api.get('/mood/weekly-average');
 export const getMonthlyAverage = () => api.get('/mood/monthly-average');
 
+export const getThemes = () => api.get('/themes');
+export const createTheme = (data) => api.post('/themes', data);
+export const applyTheme = (themeId) => api.post('/themes/apply', { themeId });
+export const deleteTheme = (themeId) => api.delete(`/themes/${themeId}`);
+export const toggleLikeTheme = (themeId) => api.post(`/themes/${themeId}/like`);
+
 // Export - blob downloads with auth headers
 const downloadBlob = (blob, filename) => {
   const url = window.URL.createObjectURL(blob);
