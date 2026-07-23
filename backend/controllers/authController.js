@@ -6,7 +6,11 @@ const { sendPush } = require('../utils/push');
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const name = req.body.name;
+    const password = req.body.password;
+    const email = req.body.email && req.body.email.trim() !== '' ? req.body.email : undefined;
+    const phone = req.body.phone && req.body.phone.trim() !== '' ? req.body.phone : undefined;
+    const loginMethod = req.body.loginMethod || (email ? 'email' : 'phone');
 
     // Validate input
     if (!name || !password) {
@@ -29,10 +33,9 @@ const registerUser = async (req, res) => {
       if (exists) return res.status(400).json({ message: 'Phone already registered' });
     }
 
-    const loginMethod = email ? 'email' : 'phone';
     const otp = generateOtp();
 
-    // Build user data object dynamically so empty fields are omitted entirely (no nulls stored)
+    // Build user data object dynamically so empty fields are omitted entirely
     const userData = {
       name,
       password,
@@ -211,10 +214,9 @@ const updatePreferences = async (req, res) => {
     
     const user = await User.findById(req.user._id);
 
-    // SMS reminders only for PRO users
     let finalReminderMethod = reminderMethod || user.notificationPrefs.reminderMethod;
     if (finalReminderMethod === 'sms' && !user.isPremium) {
-      finalReminderMethod = 'email'; // Force email for non-pro users
+      finalReminderMethod = 'email';
     }
 
     user.notificationPrefs = {
@@ -237,7 +239,6 @@ const updatePreferences = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
-
 
 const changePassword = async (req, res) => {
   try {
