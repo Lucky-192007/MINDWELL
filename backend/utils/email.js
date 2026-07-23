@@ -1,40 +1,32 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  pool: true,
-  maxConnections: 5,
-  maxMessages: 100,
-});
+// Initialize Resend with your API key from environment variables
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
-const sendOtpEmail = async (toEmail, name, otp) => {
+const sendOtpEmail = async (email, name, otp) => {
   try {
-    await transporter.sendMail({
-      from: `"MindWell" <${process.env.EMAIL_USER}>`,
-      to: toEmail,
-      subject: 'Your MindWell verification code',
+    const data = await resend.emails.send({
+      from: 'MindWell <onboarding@resend.dev>', // Use your verified domain later, or Resend's test domain for now
+      to: [email],
+      subject: 'Your MindWell Verification Code',
       html: `
-        <div style="font-family: sans-serif; max-width: 420px; margin: 0 auto;">
-          <h2 style="color: #6C5CE7;">Verify your email</h2>
-          <p>Hi ${name},</p>
-          <p>Use this code to finish creating your MindWell account:</p>
-          <p style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #1E1B33; text-align: center;">${otp}</p>
-          <p style="color: #8B889C; font-size: 13px;">This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2>Welcome to MindWell, ${name}!</h2>
+          <p>Your verification code is:</p>
+          <h1 style="color: #6366f1; letter-spacing: 2px;">${otp}</h1>
+          <p>This code will expire in 10 minutes.</p>
         </div>
       `,
-      priority: 'high',
     });
-    return true;
+    return data;
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error('Resend email error:', error);
     throw error;
   }
 };
 
-module.exports = { transporter, generateOtp, sendOtpEmail };
+module.exports = { generateOtp, sendOtpEmail };
