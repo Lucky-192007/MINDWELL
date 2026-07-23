@@ -29,35 +29,33 @@ const registerUser = async (req, res) => {
       if (exists) return res.status(400).json({ message: 'Phone already registered' });
     }
 
-    // Determine login method
     const loginMethod = email ? 'email' : 'phone';
-
-    // Generate OTP
     const otp = generateOtp();
 
-    // Create user
-    const user = new User({
+    // Build user data object dynamically so empty fields are omitted entirely (no nulls stored)
+    const userData = {
       name,
-      email: email || null,
-      phone: phone || null,
       password,
       loginMethod,
       isPremium: false,
       isVerified: false,
       otpCode: otp,
       otpExpires: new Date(Date.now() + 10 * 60 * 1000),
-    });
+    };
 
+    if (email) userData.email = email;
+    if (phone) userData.phone = phone;
+
+    const user = new User(userData);
     await user.save();
 
-    // Send OTP asynchronously without blocking the response (prevents timeout crashes)
+    // Send OTP asynchronously
     if (email) {
-      sendOtpEmail(email, name, otp).catch(err => console.error('Non-blocking email send error:', err.message));
+      sendOtpEmail(email, name, otp).catch(err => console.error('Email send error:', err.message));
     } else if (phone) {
-      sendSMS(phone, `Your MindWell verification code is: ${otp}`).catch(err => console.error('Non-blocking SMS send error:', err.message));
+      sendSMS(phone, `Your MindWell verification code is: ${otp}`).catch(err => console.error('SMS send error:', err.message));
     }
 
-    // Respond immediately to the frontend
     res.status(201).json({
       message: `Verification code sent to your ${loginMethod}`,
       pendingOtpEmail: email || phone,
