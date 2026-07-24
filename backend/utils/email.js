@@ -10,7 +10,7 @@ const generateOtp = () => {
 const sendOtpEmail = async (email, name, otp) => {
   try {
     const data = await resend.emails.send({
-      from: 'MindWell <onboarding@resend.dev>', // Use your verified domain later, or Resend's test domain for now
+      from: 'MindWell <onboarding@resend.dev>', // Must use onboarding@resend.dev for Resend's free tier testing
       to: [email],
       subject: 'Your MindWell Verification Code',
       html: `
