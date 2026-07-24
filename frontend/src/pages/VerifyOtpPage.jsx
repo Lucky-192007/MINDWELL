@@ -18,7 +18,8 @@ const VerifyOtpPage = () => {
     e.preventDefault();
     setError('');
     try {
-      await verifyOtp(pendingOtpEmail, otp);
+      // Pass as an object matching your backend req.body structure
+      await verifyOtp({ emailOrPhone: pendingOtpEmail, otp });
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed');
